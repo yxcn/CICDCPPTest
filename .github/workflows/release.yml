@@ -1,0 +1,37 @@
+﻿name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"   # 例如 v1.0.0
+
+permissions:
+  contents: write   # 创建 release / 上传附件需要
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (Release)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_WERROR=ON
+
+      - name: Build
+        run: cmake --build build -j
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp build/app dist/
+          cp build/test_add dist/ || true
+          tar -czf CICDCPPTest-${{ github.ref_name }}-linux-x64.tar.gz -C dist .
+
+      - name: Create GitHub Release and upload asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: CICDCPPTest-${{ github.ref_name }}-linux-x64.tar.gz
