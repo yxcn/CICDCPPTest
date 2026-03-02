@@ -13,3 +13,9 @@ add_executable(test_add test/test.cpp)
 target_link_libraries(test_add PRIVATE core)
 
 add_test(NAME AddTest COMMAND test_add)
+
+target_compile_features(core PUBLIC cxx_std_17)
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  target_compile_options(core PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()

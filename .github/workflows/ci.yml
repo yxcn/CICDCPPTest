@@ -3,19 +3,47 @@
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+        build_type: [Debug, Release]
+
+    env:
+      BUILD_DIR: build-${{ matrix.compiler }}-${{ matrix.build_type }}
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install clang
+        if: matrix.compiler == 'clang'
+        run: sudo apt-get update && sudo apt-get install -y clang
+
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            export CC=clang
+            export CXX=clang++
+          else
+            export CC=gcc
+            export CXX=g++
+          fi
+          cmake -S . -B "${{ env.BUILD_DIR }}" -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
       - name: Build
-        run: cmake --build build -j
+        run: cmake --build "${{ env.BUILD_DIR }}" -j
 
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --test-dir "${{ env.BUILD_DIR }}" --output-on-failure
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BUILD_DIR }}
+          path: ${{ env.BUILD_DIR }}/
