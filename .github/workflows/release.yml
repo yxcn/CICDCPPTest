@@ -34,4 +34,7 @@ jobs:
       - name: Create GitHub Release and upload asset
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
+          body: |
+            本版本由 GitHub Actions 自动构建发布。
           files: CICDCPPTest-${{ github.ref_name }}-linux-x64.tar.gz
